@@ -25,7 +25,11 @@ def query_customization() -> dict:
     print("\nThe SPI CE pin: CE0 or CE1")
     spi_ce = pyil.input_int("SPI CEx (CE0=GPIO8, CE1=GPIO7)?", blank=0, min=0, max=1, prompt_color=prompt_color,
                             prompt_hint=True)
-
+    
+    print("\nThe IRQ-Sequence may cause trouble")                        
+    skip_irq = pyil.input_int("Skip IRQ-Sequence?", blank=0, min=0, max=1, prompt_color=prompt_color,
+                             prompt_hint=True)
+    
     pin_irq = pyil.input_int("IRQ GPIO pin (BCM numbering)?", blank=24, min=1, max=27, prompt_color=prompt_color,
                              prompt_hint=True)
 
@@ -69,6 +73,7 @@ class ReaderClass(ReaderBaseClass):
             spi_bus = config.setdefault('spi_bus', None)
             spi_ce = config.setdefault('spi_ce', None)
             pin_irq = config.setdefault('pin_irq', None)
+            self._skip_irq = config.setdefault('skip_irq', True)
 
             if 'pin_rst' not in config:
                 self._logger.warning("No parameter 'pin_rst' found. Disabling hardware reset.")
@@ -132,7 +137,8 @@ class ReaderClass(ReaderBaseClass):
 
     def read_card(self) -> str:
         # Scan for cards
-        self.device.wait_for_tag()
+        if not self._skip_irq:
+            self.device.wait_for_tag()
         if not self._keep_running:
             return ''
         return self._read_function()
